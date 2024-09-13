@@ -1,0 +1,57 @@
+name: Cargo Build & Release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_and_test:
+    name: Build and upload
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install libudev-dev
+      - name: Cache cargo dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-rust-${{ steps.toolchain.outputs.cachekey }}
+      - name: Prepare toolchain
+        run: rustup update && rustup target add thumbv6m-none-eabi && cargo install --force elf2uf2-rs
+      - name: Check formatting
+        run: cargo fmt --check
+      - name: Build
+        run: cargo build --verbose
+    # Running tests while crosscompiling is tricky, disabling **for now** ;)
+    #   - name: Test
+    #     run: cargo test --verbose
+      - name: Build release
+        run: cargo build --release --verbose
+      - name: Convert debug binaries
+        run: mkdir output && for target in $(cargo read-manifest | jq -r '.targets[] | select(.kind|index("bin")) | .name' ); do echo Converting $target; elf2uf2-rs target/thumbv6m-none-eabi/debug/$target output/$target-debug.uf2 ; done
+      - name: Convert release binaries
+        run: for target in $(cargo read-manifest | jq -r '.targets[] | select(.kind|index("bin")) | .name' ); do echo Converting $target; elf2uf2-rs target/thumbv6m-none-eabi/release/$target output/$target-release.uf2 ; done
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: output/
+          compression-level: 0
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: output/

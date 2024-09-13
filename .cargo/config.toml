@@ -1,0 +1,17 @@
+# uncomment the preffered runner
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+
+# probe-rs
+# runner = "probe-rs run --chip RP2040"
+
+# picotool
+runner = "picotool load -uvx -t elf"
+
+# elf2uf2-rs
+# runner = "elf2uf2-rs -d"
+
+[build]
+target = "thumbv6m-none-eabi" # Cortex-M0 and Cortex-M0+
+
+[env]
+DEFMT_LOG = "debug"
