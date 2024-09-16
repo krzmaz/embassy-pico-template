@@ -19,3 +19,8 @@ On MacOS and Linux you can install `picotool` with [brew](https://brew.sh/):
 ```sh
 brew install picotool
 ```
+
+## CI [![Cargo Build & Release](https://github.com/krzmaz/embassy-pico-template/actions/workflows/ci.yml/badge.svg)](https://github.com/krzmaz/embassy-pico-template/actions/workflows/ci.yml)
+This repository has a very simplistic CI setup that builds the main branch after each push and uploads the resulting binaries in UF2 format for ease of retesting older builds (the artifacts are stored for 90 days after the CI run)
+
+If there was a new tag pushed, it will also be build and the artifacts will be uploaded and available in the Releases section.
